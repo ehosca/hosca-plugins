@@ -66,9 +66,30 @@ Or just ask: *"audit the MyDatabase database on localhost."* The plugin will:
 Nothing is persisted by default — connection details exist only for a single run. Prefer
 **trusted auth** (`-E`); for SQL logins the password is passed via the **`SQLCMDPASSWORD`** env var
 (never `-P` on the command line, never a slash-command argument — both would land in the process
-list and the Claude Code transcript). For repeat audits you can opt into go-sqlcmd *contexts* or
-keep non-secret server/database defaults in a local settings file. See
+list and the Claude Code transcript). See
 [`references/sqlcmd-setup.md`](skills/sql-audit/references/sqlcmd-setup.md#credentials--connection-info).
+
+### Reusable connections (go-sqlcmd contexts)
+
+If the detected sqlcmd is **go-sqlcmd**, the plugin can save a named **context** so you pick a
+target once and SQL passwords are stored **encrypted** (Windows DPAPI) — never retyped or placed
+on the command line:
+
+```
+/sql-audit --context auditsrv MyDatabase
+```
+
+```
+# one-time setup (SQL auth), password read from SQLCMDPASSWORD and encrypted at rest
+sqlcmd config add-endpoint --name auditsrv-ep --address db.example.com --port 1433
+sqlcmd config add-user     --name audit-login --username auditor --password-encryption dpapi
+sqlcmd config add-context  --name auditsrv    --endpoint auditsrv-ep --user audit-login
+```
+
+Contexts are a go-sqlcmd-only feature; the classic ODBC `sqlcmd.exe` doesn't support them.
+Config lives in `%USERPROFILE%\.sqlcmd\sqlconfig` (gitignored). Full lifecycle —
+create/list/run/delete, trusted vs SQL auth, named instances — in
+[`references/contexts.md`](skills/sql-audit/references/contexts.md).
 
 ## How it works
 

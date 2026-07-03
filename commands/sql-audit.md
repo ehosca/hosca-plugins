@@ -1,6 +1,6 @@
 ---
 description: Audit a SQL Server database against Joe Celko's SQL Programming Style and write a tiered findings report.
-argument-hint: [server] [database] [-E | -U <user>]
+argument-hint: [server] [database] [-E | -U <user> | --context <name>]
 ---
 
 Run a Celko-style audit of a SQL Server database.
@@ -8,7 +8,10 @@ Run a Celko-style audit of a SQL Server database.
 Arguments (optional — ask for anything missing): `$ARGUMENTS`
 - first token → server (`-S`)
 - second token → database (`-d`)
-- remaining → auth: `-E` (trusted, preferred) or `-U <user>`
+- auth: `-E` (trusted, preferred) or `-U <user>`
+- `--context <name>` → use a saved **go-sqlcmd context** (server + encrypted credentials);
+  then only the database is needed. If the flavor detected isn't go-sqlcmd, contexts are
+  unavailable — offer to `winget install sqlcmd` or fall back to the per-run flow.
 
 **Do not accept a password in these arguments** — they are logged in the transcript. For SQL
 auth, the skill prompts for the password securely and passes it via the `SQLCMDPASSWORD`

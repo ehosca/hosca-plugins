@@ -61,12 +61,13 @@ try   { & sqlcmd -S <srv> -d <db> -U <user> -C -N -i audit.sql -s "|" -W -h -1 }
 finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
 ```
 
-**Optional persistence (repeat audits).** If you audit the same server often, use go-sqlcmd
-*contexts* instead of retyping — `sqlcmd config add-endpoint` / `add-context` store the endpoint
-(and, on supported builds, an encrypted password) in `%USERPROFILE%\.sqlcmd\sqlconfig`; then run
-`sqlcmd --context <name> -d <db> -i audit.sql`. Alternatively, keep only **non-secret** defaults
-(server, database) in a plugin-local settings file `.claude/sql-audit-skill.local.md` in the
-consuming project — never put the password there. Both are opt-in; the default flow stores nothing.
+**Optional persistence (repeat audits).** If the detected binary is **go-sqlcmd**
+(`"supportsContexts": true`), save a named **context** instead of retyping — endpoint + user are
+stored in `%USERPROFILE%\.sqlcmd\sqlconfig`, with the SQL password **encrypted** when created with
+`--password-encryption dpapi` (Windows). Then run `sqlcmd --context <name> -d <db> -i audit.sql`.
+See [`contexts.md`](contexts.md) for the full lifecycle. Alternatively keep only **non-secret**
+defaults (server, database) in a plugin-local `.claude/sql-audit-skill.local.md` — never the
+password. Both are opt-in; the default flow stores nothing.
 
 ## Permissions
 The audit reads catalog views and `sys.sql_modules`. The login needs `VIEW DEFINITION`

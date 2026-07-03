@@ -18,12 +18,16 @@ Run the detector and capture the resolved path:
 powershell -NoProfile -ExecutionPolicy Bypass -File "${CLAUDE_PLUGIN_ROOT}/scripts/detect-sqlcmd.ps1"
 ```
 
-- Exit 0 → stdout is the full path to `sqlcmd`. Use it for step 3.
+- Exit 0 → stdout is one JSON line:
+  `{"path": "...", "flavor": "go-sqlcmd"|"odbc", "supportsContexts": true|false}`.
+  Keep `path` to run sqlcmd. `supportsContexts` tells you whether reusable connection
+  **contexts** are available (go-sqlcmd only — see step 2b).
 - Exit 1 → sqlcmd is missing. **Show the printed guidance and ask the user** before
-  installing anything. If they approve, run `winget install sqlcmd`, then re-run the
-  detector. Do **not** auto-install without confirmation.
+  installing anything. If they approve, run `winget install sqlcmd` (installs go-sqlcmd,
+  which supports contexts), then re-run the detector. Do **not** auto-install without confirmation.
 
-See `references/sqlcmd-setup.md` for the probed locations and install details.
+See `references/sqlcmd-setup.md` for probed locations/install details and
+`references/contexts.md` for the full context lifecycle.
 
 ### 2. Collect connection parameters
 Ask the user (or read non-secret values from the `/sql-audit` command arguments):
@@ -42,6 +46,37 @@ and this transcript:
 - For SQL auth, pass the password via the **`SQLCMDPASSWORD` environment variable** set in the
   *same* shell invocation as sqlcmd (sqlcmd reads it automatically). Prompt the user for it with
   `Read-Host -AsSecureString` if it wasn't already provided out-of-band; never echo it back.
+
+### 2b. Reusable connections with go-sqlcmd contexts (preferred for repeat audits)
+Only when the detector reported `"supportsContexts": true`. A **context** is a named saved
+connection, so the user picks a target once and SQL passwords are stored encrypted instead of
+retyped. Full reference: `references/contexts.md`.
+
+If the user asked for a context (e.g. `/sql-audit --context <name>`) or wants to reuse a
+connection, list what exists and let them choose:
+```
+"<sqlcmd-path>" config get-contexts
+```
+Create one if none fits. Trusted (Windows) auth — no stored secret:
+```
+"<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
+"<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep>
+```
+SQL auth — password taken from `SQLCMDPASSWORD` and stored **encrypted**:
+```
+$env:SQLCMDPASSWORD = (prompt securely)
+try {
+  "<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
+  "<sqlcmd-path>" config add-user     --name <u>  --username <sqluser> --password-encryption dpapi
+  "<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep> --user <u>
+} finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
+```
+**Always pass `--password-encryption dpapi` on Windows** — the default (`none`) stores the
+password base64-encoded (effectively plaintext) in `%USERPROFILE%\.sqlcmd\sqlconfig`. Then run
+the audit against the context (step 3, "Saved context").
+
+If the detector reported `"supportsContexts": false` (classic ODBC sqlcmd) and the user wants
+contexts, offer to install go-sqlcmd (`winget install sqlcmd`); otherwise use the per-run flow.
 
 ### 3. Run the audit
 Invoke the single audit script and capture the pipe-delimited result set.
@@ -62,6 +97,14 @@ try {
     -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" `
     -s "|" -W -h -1 -w 65535
 } finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
+```
+
+Saved go-sqlcmd context (from step 2b) — no credentials on the command line, encrypted
+password used automatically:
+```
+"<sqlcmd-path>" --context <ctx> -d <database> -C -N ^
+  -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" ^
+  -s "|" -W -h -1 -w 65535
 ```
 
 Flags: `-C` trust server cert, `-N` encrypt, `-s "|"` column separator, `-W` trim
