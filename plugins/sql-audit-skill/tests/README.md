@@ -8,6 +8,8 @@ plus incidental hits that confirm D06/D07/N06.
 
 ## Run
 
+Paths below are relative to the plugin directory (`plugins/sql-audit-skill/`) — run from there.
+
 ```powershell
 $sqlcmd = "<sqlcmd-path>"            # e.g. from scripts/detect-sqlcmd.ps1
 $srv    = "localhost\SQLEXPRESS"

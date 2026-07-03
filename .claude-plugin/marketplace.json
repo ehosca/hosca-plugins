@@ -1,0 +1,17 @@
+{
+  "name": "hosca-plugins",
+  "owner": { "name": "erhan", "email": "erhan@hosca.com" },
+  "description": "Database and SQL Server tooling plugins.",
+  "plugins": [
+    {
+      "name": "sql-audit-skill",
+      "source": "./plugins/sql-audit-skill",
+      "description": "Audit a SQL Server database against Joe Celko's SQL Programming Style rules. Read-only catalog queries via sqlcmd, severity-tiered report.",
+      "author": { "name": "erhan", "email": "erhan@hosca.com" },
+      "homepage": "https://github.com/ehosca/hosca-plugins",
+      "repository": "https://github.com/ehosca/hosca-plugins",
+      "license": "MIT",
+      "keywords": ["sql-server", "audit", "celko", "sqlcmd", "linter"]
+    }
+  ]
+}
