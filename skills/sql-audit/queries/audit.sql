@@ -6,8 +6,9 @@
                           object_name, detail)
    ordered by severity (ERROR > WARN > INFO), then rule_id.
 
-   Run headless for clean parsing:
-     sqlcmd -S <srv> -d <db> {-E | -U <u> -P <p>} -C -i audit.sql -s"|" -W -h-1
+   Run headless for clean parsing (trusted auth shown; for SQL auth use -U and pass the
+   password via the SQLCMDPASSWORD env var, never -P on the command line):
+     sqlcmd -S <srv> -d <db> -E -C -i audit.sql -s"|" -W -h-1
 
    Notes:
      * Requires VIEW DEFINITION on the target database (for sys.sql_modules).

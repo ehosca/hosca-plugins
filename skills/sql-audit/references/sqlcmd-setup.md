@@ -23,8 +23,10 @@ Or grab a release binary: https://github.com/microsoft/go-sqlcmd/releases
 After installing, re-run the detector.
 
 ## Invocation
+Trusted auth (preferred). For SQL auth, add `-U <user>` and pass the password via the
+`SQLCMDPASSWORD` env var — **not** `-P` (see [Credentials](#credentials--connection-info)).
 ```
-"<sqlcmd-path>" -S <server> -d <database> {-E | -U <user> -P <pass>} -C -N ^
+"<sqlcmd-path>" -S <server> -d <database> -E -C -N ^
   -i "<plugin>/skills/sql-audit/queries/audit.sql" ^
   -s "|" -W -h -1 -w 65535
 ```
@@ -33,7 +35,7 @@ After installing, re-run the detector.
 | `-S` | server (`localhost`, `localhost\SQLEXPRESS`, `tcp:host,1433`) |
 | `-d` | database to audit |
 | `-E` | trusted (Windows) auth |
-| `-U` / `-P` | SQL login / password |
+| `-U` | SQL login (password via `SQLCMDPASSWORD` env var, never `-P`) |
 | `-C` | trust server certificate |
 | `-N` | encrypt connection |
 | `-s "|"` | column separator for parsing |

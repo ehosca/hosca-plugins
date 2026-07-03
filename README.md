@@ -50,9 +50,13 @@ Full rationale, exceptions, and remediation per rule: [`skills/sql-audit/referen
 ## Usage
 
 ```
-/sql-audit localhost MyDatabase -E
-/sql-audit tcp:host,1433 MyDatabase -U appuser -P ****
+/sql-audit localhost MyDatabase -E                 # trusted auth (preferred)
+/sql-audit tcp:host,1433 MyDatabase -U appuser      # SQL auth: password prompted securely, never on the command line
+/sql-audit --context auditsrv MyDatabase            # saved go-sqlcmd context
 ```
+
+Never put a password in the command — no `-P`. For SQL auth the plugin prompts and passes it via
+the `SQLCMDPASSWORD` env var (see [Credentials](#credentials)).
 
 Or just ask: *"audit the MyDatabase database on localhost."* The plugin will:
 
