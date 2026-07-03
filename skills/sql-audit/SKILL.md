@@ -51,22 +51,13 @@ Ask the user (or read non-secret values from the `/sql-audit` command arguments)
 - **Database** (`-d`) — the database to audit.
 - **Auth**: Windows/trusted → `-E` (**default, no credentials**); SQL login → `-U <user>` + password.
 
-**Credential handling — read this before running.** Nothing is persisted; credentials live
-only for the single command invocation. To keep secrets out of the process list, shell history,
-and this transcript:
-
-- **Prefer `-E` (trusted auth)** whenever the user is on the box — then there is no secret at all.
-- **Never accept a password as a slash-command argument** and **never place `-P <pass>` on the
-  command line.** Both would be logged verbatim in the transcript.
-- **You (the agent) cannot prompt for a password.** The shell tools are non-interactive and don't
-  persist state between calls, so a live `Read-Host` hangs, and anything the user types in chat is
-  captured in the transcript. So for **SQL auth**, resolve the password from **Windows Credential
-  Manager** (`scripts/credential.ps1`), read into `SQLCMDPASSWORD` for the single sqlcmd call:
-    - If a credential exists, `scripts/credential.ps1 get -Server <s> -User <u>` returns it.
-    - If not (or it errors "Element not found"), tell the user to store it once **themselves** via
-      the `!` prefix (never in chat), then retry:
-      `! powershell -File "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" store -Server <s> -User <u>`
-    - See `references/credential-manager.md`. (go-sqlcmd contexts, step 2b, are an alternative.)
+**Credential handling — the rules.** Prefer `-E` (trusted auth): no secret at all. For SQL auth,
+**never** put `-P <pass>` on the command line or accept a password as an argument or in chat — all
+leak to the process list / transcript. You (the agent) can't prompt (non-interactive shell), so
+resolve the password from **Windows Credential Manager** at run time (step 3). If it isn't stored,
+have the user store it once themselves via the `!` prefix:
+`! powershell -File "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" store -Server <s> -User <u>`.
+Full flow: `references/credential-manager.md`. (go-sqlcmd contexts, step 2b, are an alternative.)
 
 ### 2b. Reusable connections with go-sqlcmd contexts (preferred for repeat audits)
 Only when the detector reported `"supportsContexts": true`. A **context** is a named saved

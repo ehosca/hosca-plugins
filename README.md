@@ -88,23 +88,15 @@ third-party modules. Full store/get/rotate/delete flow:
 ### Reusable connections (go-sqlcmd contexts)
 
 If the detected sqlcmd is **go-sqlcmd**, the plugin can save a named **context** so you pick a
-target once and SQL passwords are stored **encrypted** (Windows DPAPI) — never retyped or placed
-on the command line:
+target once and SQL passwords are stored **encrypted** (Windows DPAPI, in
+`%USERPROFILE%\.sqlcmd\sqlconfig`) — never retyped or placed on the command line:
 
 ```
 /sql-audit --context auditsrv MyDatabase
 ```
 
-```
-# one-time setup (SQL auth), password read from SQLCMDPASSWORD and encrypted at rest
-sqlcmd config add-endpoint --name auditsrv-ep --address db.example.com --port 1433
-sqlcmd config add-user     --name audit-login --username auditor --password-encryption dpapi
-sqlcmd config add-context  --name auditsrv    --endpoint auditsrv-ep --user audit-login
-```
-
-Contexts are a go-sqlcmd-only feature; the classic ODBC `sqlcmd.exe` doesn't support them.
-Config lives in `%USERPROFILE%\.sqlcmd\sqlconfig` (gitignored). Full lifecycle —
-create/list/run/delete, trusted vs SQL auth, named instances — in
+Contexts are a go-sqlcmd-only feature; the classic ODBC `sqlcmd.exe` doesn't support them. Full
+lifecycle — create/list/run/delete, trusted vs SQL auth, named instances — in
 [`references/contexts.md`](skills/sql-audit/references/contexts.md).
 
 ## How it works

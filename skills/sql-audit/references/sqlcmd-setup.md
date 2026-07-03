@@ -45,38 +45,12 @@ Trusted auth (preferred). For SQL auth, add `-U <user>` and pass the password vi
 
 ## Credentials & connection info
 
-Nothing is persisted by default — connection parameters live only for a single run.
-
-| Item | Where it lives | Notes |
-|------|----------------|-------|
-| Server, database | command args or prompt | non-secret; may be defaulted (see below) |
-| Trusted auth (`-E`) | n/a | **preferred** — no credential handled at all |
-| SQL username (`-U`) | command args or prompt | non-secret |
-| SQL password | **Windows Credential Manager** (DPAPI), read into `SQLCMDPASSWORD` at run time | **never** `-P` on the command line, **never** a slash-command argument, **never** typed in chat |
-
-**Preferred: Windows Credential Manager.** Store the password once (DPAPI-encrypted, user-scoped);
-the audit reads it into `SQLCMDPASSWORD` for a single sqlcmd call. Works with classic ODBC sqlcmd
-— no go-sqlcmd needed. Full flow in [`credential-manager.md`](credential-manager.md).
-
-```powershell
-# one-time store (secure prompt):
-powershell -File scripts/credential.ps1 store -Server <srv> -User <user>
-# at audit time:
-$env:SQLCMDPASSWORD = & scripts/credential.ps1 get -Server <srv> -User <user>
-try   { & sqlcmd -S <srv> -d <db> -U <user> -C -N -i audit.sql -s "|" -W -h -1 }
-finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
-```
-
-sqlcmd (classic ODBC and go-sqlcmd) reads **`SQLCMDPASSWORD`** automatically, so the secret stays
-out of `argv`, shell history, and the transcript.
-
-**Optional persistence (repeat audits).** If the detected binary is **go-sqlcmd**
-(`"supportsContexts": true`), save a named **context** instead of retyping — endpoint + user are
-stored in `%USERPROFILE%\.sqlcmd\sqlconfig`, with the SQL password **encrypted** when created with
-`--password-encryption dpapi` (Windows). Then run `sqlcmd --context <name> -d <db> -i audit.sql`.
-See [`contexts.md`](contexts.md) for the full lifecycle. Alternatively keep only **non-secret**
-defaults (server, database) in a plugin-local `.claude/sql-audit-skill.local.md` — never the
-password. Both are opt-in; the default flow stores nothing.
+Server, database, and SQL username are non-secret (command args or prompt). Trusted auth (`-E`)
+is preferred — no secret at all. For SQL auth, the password lives in **Windows Credential
+Manager** and is read into `SQLCMDPASSWORD` for a single sqlcmd call — never `-P`, never a
+slash-command argument, never typed in chat. Full flow (store/get/rotate/delete):
+[`credential-manager.md`](credential-manager.md). Reusable go-sqlcmd contexts (endpoint + encrypted
+password in `sqlconfig`) are an alternative — see [`contexts.md`](contexts.md).
 
 ## Permissions
 The audit reads catalog views and `sys.sql_modules`. The login needs `VIEW DEFINITION`
