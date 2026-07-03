@@ -1,0 +1,13 @@
+# pdftotext scratch from rule extraction
+celko.txt
+*.pdf
+
+# audit output
+audit-report.md
+*.out
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vs/
+*.user
