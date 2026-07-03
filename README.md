@@ -1,7 +1,7 @@
 # hosca-plugins
 
-A [Claude Code](https://code.claude.com/docs/en/plugins) plugin **marketplace** for database and
-SQL Server tooling.
+A [Claude Code](https://code.claude.com/docs/en/plugins) plugin **marketplace** — a growing catalog
+of Hosca plugins.
 
 ## Plugins
 
