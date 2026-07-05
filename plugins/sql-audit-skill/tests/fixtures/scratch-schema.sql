@@ -6,10 +6,8 @@
    compare to tests/README.md ("Expected findings").
 
    Setup:    sqlcmd -S <srv> -E -C -N -i tests/fixtures/scratch-schema.sql
-   Audit:    sqlcmd -S <srv> -d SqlAuditTest -E -C -N \
-                    -i skills/sql-audit/queries/audit.sql -s "|" -W -h -1 -w 65535
-   Teardown: sqlcmd -S <srv> -E -C -N -Q "ALTER DATABASE SqlAuditTest SET SINGLE_USER
-                    WITH ROLLBACK IMMEDIATE; DROP DATABASE SqlAuditTest;"
+   Audit:    sqlcmd -S <srv> -d SqlAuditTest -E -C -N -i skills/sql-audit/queries/audit.sql -s "|" -W -h -1 -w 65535
+   Teardown: sqlcmd -S <srv> -E -C -N -Q "ALTER DATABASE SqlAuditTest SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE SqlAuditTest;"
    ============================================================================= */
 SET NOCOUNT ON;
 IF DB_ID('SqlAuditTest') IS NOT NULL

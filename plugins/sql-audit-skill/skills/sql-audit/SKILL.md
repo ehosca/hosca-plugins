@@ -21,7 +21,9 @@ session, where the secure prompt works and the value stays out of the transcript
 ! powershell -File "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" store -Server <server> -User <user>
 ```
 
-Tell them it prompts securely and stores the password DPAPI-encrypted under
+**When presenting any `!` command, substitute the plugin's real absolute path for
+`${CLAUDE_PLUGIN_ROOT}`** — that variable is not defined in the user's shell and would expand to
+nothing. Tell them it prompts securely and stores the password DPAPI-encrypted under
 `sql-audit:<server>:<user>`, then they can run `/sql-audit <server> <database> -U <user>` and the
 audit will pull it from the vault. Storage is per-machine (DPAPI doesn't roam), so this repeats
 once on each new machine. Reference: `references/credential-manager.md`. Then stop.
@@ -55,7 +57,7 @@ Ask the user (or read non-secret values from the `/sql-audit` command arguments)
 **never** put `-P <pass>` on the command line or accept a password as an argument or in chat — all
 leak to the process list / transcript. You (the agent) can't prompt (non-interactive shell), so
 resolve the password from **Windows Credential Manager** at run time (step 3). If it isn't stored,
-have the user store it once themselves via the `!` prefix:
+have the user store it once themselves via the `!` prefix (substituting the real plugin path):
 `! powershell -File "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" store -Server <s> -User <u>`.
 Full flow: `references/credential-manager.md`. (go-sqlcmd contexts, step 2b, are an alternative.)
 
@@ -66,21 +68,23 @@ retyped. Full reference: `references/contexts.md`.
 
 If the user asked for a context (e.g. `/sql-audit --context <name>`) or wants to reuse a
 connection, list what exists and let them choose:
-```
-"<sqlcmd-path>" config get-contexts
+```powershell
+& "<sqlcmd-path>" config get-contexts
 ```
 Create one if none fits. Trusted (Windows) auth — no stored secret:
+```powershell
+& "<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
+& "<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep>
 ```
-"<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
-"<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep>
-```
-SQL auth — password taken from `SQLCMDPASSWORD` and stored **encrypted**:
-```
-$env:SQLCMDPASSWORD = (prompt securely)
+SQL auth — password taken from `SQLCMDPASSWORD` and stored **encrypted**. You cannot prompt for
+it (non-interactive shell): pull it from Windows Credential Manager if stored; if it isn't, have
+the user store it first (step 2) or run this whole block themselves via `!`:
+```powershell
+$env:SQLCMDPASSWORD = & "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" get -Server <server> -User <sqluser>
 try {
-  "<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
-  "<sqlcmd-path>" config add-user     --name <u>  --username <sqluser> --password-encryption dpapi
-  "<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep> --user <u>
+  & "<sqlcmd-path>" config add-endpoint --name <ep> --address <server> --port 1433
+  & "<sqlcmd-path>" config add-user     --name <u>  --username <sqluser> --password-encryption dpapi
+  & "<sqlcmd-path>" config add-context  --name <ctx> --endpoint <ep> --user <u>
 } finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
 ```
 **Always pass `--password-encryption dpapi` on Windows** — the default (`none`) stores the
@@ -94,15 +98,15 @@ contexts, offer to install go-sqlcmd (`winget install sqlcmd`); otherwise use th
 Invoke the single audit script and capture the pipe-delimited result set.
 
 Trusted auth (preferred):
-```
-"<sqlcmd-path>" -S <server> -d <database> -E -C -N ^
-  -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" ^
+```powershell
+& "<sqlcmd-path>" -S <server> -d <database> -E -C -N `
+  -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" `
   -s "|" -W -h -1 -w 65535
 ```
 
 SQL auth — password pulled from Windows Credential Manager into the env var for one call, then
 cleared (never `-P`, never typed in chat):
-```
+```powershell
 $env:SQLCMDPASSWORD = & "${CLAUDE_PLUGIN_ROOT}/scripts/credential.ps1" get -Server <server> -User <user>
 try {
   & "<sqlcmd-path>" -S <server> -d <database> -U <user> -C -N `
@@ -115,9 +119,9 @@ If `get` errors, the credential isn't stored yet — have the user store it via 
 
 Saved go-sqlcmd context (from step 2b) — no credentials on the command line, encrypted
 password used automatically:
-```
-"<sqlcmd-path>" --context <ctx> -d <database> -C -N ^
-  -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" ^
+```powershell
+& "<sqlcmd-path>" --context <ctx> -d <database> -C -N `
+  -i "${CLAUDE_PLUGIN_ROOT}/skills/sql-audit/queries/audit.sql" `
   -s "|" -W -h -1 -w 65535
 ```
 

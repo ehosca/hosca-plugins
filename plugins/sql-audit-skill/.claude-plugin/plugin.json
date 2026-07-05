@@ -1,7 +1,7 @@
 {
   "name": "sql-audit-skill",
-  "version": "0.1.0",
-  "description": "Audit a SQL Server database against Joe Celko's SQL Programming Style rules. Runs read-only catalog queries via sqlcmd and produces a severity-tiered findings report.",
+  "version": "0.1.1",
+  "description": "Audit a SQL Server database against Joe Celko's SQL Programming Style rules. Runs read-only catalog queries via sqlcmd and produces a severity-tiered findings report. Windows-only.",
   "author": {
     "name": "erhan",
     "email": "erhan@hosca.com"

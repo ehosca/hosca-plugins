@@ -54,6 +54,8 @@ Full rationale, exceptions, and remediation per rule: [`skills/sql-audit/referen
 
 ## Requirements
 
+- **Windows** — sqlcmd detection, install, and credential handling use PowerShell, winget, and
+  Windows Credential Manager (DPAPI). The plugin does not run on macOS/Linux.
 - **Claude Code** with plugin support.
 - **`sqlcmd`** — the plugin auto-detects an existing install (PATH, winget go-sqlcmd, or the
   ODBC/SSMS/VS bundled tools). If missing it offers to install the open-source

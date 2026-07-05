@@ -25,9 +25,9 @@ After installing, re-run the detector.
 ## Invocation
 Trusted auth (preferred). For SQL auth, add `-U <user>` and pass the password via the
 `SQLCMDPASSWORD` env var — **not** `-P` (see [Credentials](#credentials--connection-info)).
-```
-"<sqlcmd-path>" -S <server> -d <database> -E -C -N ^
-  -i "<plugin>/skills/sql-audit/queries/audit.sql" ^
+```powershell
+& "<sqlcmd-path>" -S <server> -d <database> -E -C -N `
+  -i "<plugin>/skills/sql-audit/queries/audit.sql" `
   -s "|" -W -h -1 -w 65535
 ```
 | Flag | Purpose |

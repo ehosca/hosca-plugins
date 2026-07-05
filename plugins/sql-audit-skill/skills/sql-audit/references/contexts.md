@@ -41,8 +41,26 @@ Omit `--user` → the context uses integrated security.
 
 ## Create — SQL login · password stored encrypted
 
+If the password is already in Windows Credential Manager, the agent can do this non-interactively:
+
 ```powershell
-$env:SQLCMDPASSWORD = (Read-Host 'SQL password' -AsSecureString | ConvertFrom-SecureString -AsPlainText)
+$env:SQLCMDPASSWORD = & "<plugin>/scripts/credential.ps1" get -Server db.example.com -User auditor
+try {
+    sqlcmd config add-endpoint --name auditsrv-ep --address db.example.com --port 1433
+    sqlcmd config add-user     --name audit-login --username auditor --password-encryption dpapi
+    sqlcmd config add-context  --name auditsrv    --endpoint auditsrv-ep --user audit-login
+}
+finally { Remove-Item Env:\SQLCMDPASSWORD -ErrorAction SilentlyContinue }
+```
+
+Otherwise run the block yourself with an interactive prompt (the agent's shell cannot prompt).
+Works on Windows PowerShell 5.1 and PowerShell 7:
+
+```powershell
+$sec  = Read-Host 'SQL password' -AsSecureString
+$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
+$env:SQLCMDPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
 try {
     sqlcmd config add-endpoint --name auditsrv-ep --address db.example.com --port 1433
     sqlcmd config add-user     --name audit-login --username auditor --password-encryption dpapi
@@ -58,9 +76,9 @@ from the `SQLCMDPASSWORD` environment variable, so it never appears in `argv` or
 
 ## Run the audit against a context
 
-```
-sqlcmd --context auditsrv -d <database> -C -N ^
-  -i "<plugin>/skills/sql-audit/queries/audit.sql" ^
+```powershell
+sqlcmd --context auditsrv -d <database> -C -N `
+  -i "<plugin>/skills/sql-audit/queries/audit.sql" `
   -s "|" -W -h -1 -w 65535
 ```
 

@@ -8,6 +8,30 @@ marketplace [`RELEASING.md`](../../RELEASING.md)).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-05
+### Fixed
+- **N04** no longer false-flags ordinary names like `Vendor`/`Version`: the camel-prefix patterns
+  (`tbl[A-Z]%`, `v[A-Z]%`) now use a binary collation — under case-insensitive collations `[A-Z]`
+  also matched lowercase, so any object starting with "v" + letter tripped the rule.
+- **N02** now catches non-ASCII identifier characters (e.g. `é`): the `[^A-Za-z0-9_]` /
+  `[^A-Za-z]` patterns use a binary collation — under CI collations accented letters sort inside
+  the a–z range and slipped through.
+- D06/C01 object names use ASCII `->` instead of `→`, which rendered as `?` through sqlcmd's
+  console codepage.
+- The SQL-auth context-creation snippet in `references/contexts.md` works on Windows
+  PowerShell 5.1 (`ConvertFrom-SecureString -AsPlainText` is PowerShell 7+ only).
+- SKILL step 2b no longer asks the agent to prompt for a password (its shell is
+  non-interactive); it now pulls from Windows Credential Manager or hands the block to the user.
+- Runnable examples use one shell dialect (PowerShell backticks + `&` invocation) instead of
+  mixing cmd.exe `^` continuations.
+- Command workflow paths are anchored to `${CLAUDE_PLUGIN_ROOT}` instead of being relative to
+  the user's working directory.
+### Changed
+- Documented that the plugin is Windows-only (PowerShell, winget, Windows Credential
+  Manager/DPAPI) in the README and manifest descriptions.
+- Instructions now tell the agent to substitute the real plugin path for `${CLAUDE_PLUGIN_ROOT}`
+  when presenting `!` commands to the user (the variable is undefined in the user's shell).
+
 ## [0.1.0] - 2026-07-03
 ### Added
 - Initial release: audits a SQL Server database against Joe Celko's *SQL Programming Style*

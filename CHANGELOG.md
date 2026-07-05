@@ -11,6 +11,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the mar
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-05
+### Changed
+- `sql-audit-skill` catalog description now notes the Windows-only requirement.
+
 ## [0.1.0] - 2026-07-03
 ### Added
 - Marketplace manifest `version` field and `$schema` reference.

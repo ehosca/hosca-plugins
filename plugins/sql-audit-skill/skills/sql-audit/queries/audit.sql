@@ -73,8 +73,9 @@ FROM sys.columns c
 JOIN sys.objects o ON c.object_id = o.object_id
 JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0
-  AND ( PATINDEX('%[^A-Za-z0-9_]%', c.name) > 0
-     OR c.name LIKE '[^A-Za-z]%'
+  /* binary collation so accented letters (é etc.) don't slip through the A-Za-z ranges */
+  AND ( PATINDEX('%[^A-Za-z0-9_]%', c.name COLLATE Latin1_General_BIN) > 0
+     OR c.name COLLATE Latin1_General_BIN LIKE '[^A-Za-z]%'
      OR c.name LIKE '%[_]'
      OR c.name LIKE '%[_][_]%' )
 UNION ALL
@@ -84,8 +85,8 @@ SELECT 'ERROR','N02','Non-standard identifier chars', s.name,
 FROM sys.objects o
 JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0 AND o.type IN ('U','V','P','FN','TF','IF','TR')
-  AND ( PATINDEX('%[^A-Za-z0-9_]%', o.name) > 0
-     OR o.name LIKE '[^A-Za-z]%'
+  AND ( PATINDEX('%[^A-Za-z0-9_]%', o.name COLLATE Latin1_General_BIN) > 0
+     OR o.name COLLATE Latin1_General_BIN LIKE '[^A-Za-z]%'
      OR o.name LIKE '%[_]'
      OR o.name LIKE '%[_][_]%' )
 
@@ -116,8 +117,10 @@ SELECT 'INFO','N04','Descriptive/Hungarian prefix', s.name,
 FROM sys.objects o
 JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0 AND o.type IN ('U','V','P','FN','TF','IF')
-  AND ( o.name LIKE 'tbl[_]%' OR o.name LIKE 'tbl[A-Z]%'
-     OR o.name LIKE 'vw[_]%'  OR o.name LIKE 'v[A-Z]%'
+  /* camel-prefix patterns need a binary collation: under CI collations [A-Z] also
+     matches lowercase, so 'v[A-Z]%' would flag ordinary names like Vendor/Version */
+  AND ( o.name LIKE 'tbl[_]%' OR o.name COLLATE Latin1_General_BIN LIKE 'tbl[A-Z]%'
+     OR o.name LIKE 'vw[_]%'  OR o.name COLLATE Latin1_General_BIN LIKE 'v[A-Z]%'
      OR o.name LIKE 'sp[_]%'  OR o.name LIKE 'usp[_]%'
      OR o.name LIKE 'fn[_]%'  OR o.name LIKE 'udf[_]%' )
 
@@ -223,7 +226,7 @@ WHERE o.is_ms_shipped = 0 AND ty.name IN ('text','ntext','image','money','smallm
 /* ---------- D06: system-generated (unnamed) constraints (§3.7) ---------- */
 UNION ALL
 SELECT 'WARN','D06','System-generated constraint name', s.name,
-       CAST(OBJECT_NAME(dc.parent_object_id) + ' → ' + dc.name AS nvarchar(300)),
+       CAST(OBJECT_NAME(dc.parent_object_id) + ' -> ' + dc.name AS nvarchar(300)),
        CAST('DEFAULT constraint has an auto-generated name' AS nvarchar(400))
 FROM sys.default_constraints dc
 JOIN sys.objects o ON dc.parent_object_id = o.object_id
@@ -231,7 +234,7 @@ JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0 AND dc.is_system_named = 1
 UNION ALL
 SELECT 'WARN','D06','System-generated constraint name', s.name,
-       CAST(OBJECT_NAME(cc.parent_object_id) + ' → ' + cc.name AS nvarchar(300)),
+       CAST(OBJECT_NAME(cc.parent_object_id) + ' -> ' + cc.name AS nvarchar(300)),
        CAST('CHECK constraint has an auto-generated name' AS nvarchar(400))
 FROM sys.check_constraints cc
 JOIN sys.objects o ON cc.parent_object_id = o.object_id
@@ -239,7 +242,7 @@ JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0 AND cc.is_system_named = 1
 UNION ALL
 SELECT 'WARN','D06','System-generated constraint name', s.name,
-       CAST(OBJECT_NAME(kc.parent_object_id) + ' → ' + kc.name AS nvarchar(300)),
+       CAST(OBJECT_NAME(kc.parent_object_id) + ' -> ' + kc.name AS nvarchar(300)),
        CAST(kc.type_desc COLLATE DATABASE_DEFAULT + ' has an auto-generated name' AS nvarchar(400))
 FROM sys.key_constraints kc
 JOIN sys.objects o ON kc.parent_object_id = o.object_id
@@ -247,7 +250,7 @@ JOIN sys.schemas s ON o.schema_id = s.schema_id
 WHERE o.is_ms_shipped = 0 AND kc.is_system_named = 1
 UNION ALL
 SELECT 'WARN','D06','System-generated constraint name', s.name,
-       CAST(OBJECT_NAME(fk.parent_object_id) + ' → ' + fk.name AS nvarchar(300)),
+       CAST(OBJECT_NAME(fk.parent_object_id) + ' -> ' + fk.name AS nvarchar(300)),
        CAST('FOREIGN KEY has an auto-generated name' AS nvarchar(400))
 FROM sys.foreign_keys fk
 JOIN sys.objects o ON fk.parent_object_id = o.object_id
@@ -287,7 +290,7 @@ WHERE o.is_ms_shipped = 0 AND o.type = 'V'
 /* ---------- C01: triggers exist - prefer DRI (§6.5) ---------- */
 UNION ALL
 SELECT 'INFO','C01','Trigger present', s.name,
-       CAST(OBJECT_NAME(tr.parent_id) + ' → ' + tr.name AS nvarchar(300)),
+       CAST(OBJECT_NAME(tr.parent_id) + ' -> ' + tr.name AS nvarchar(300)),
        CAST('trigger defined - prefer declarative referential integrity where possible' AS nvarchar(400))
 FROM sys.triggers tr
 JOIN sys.objects o ON tr.parent_id = o.object_id

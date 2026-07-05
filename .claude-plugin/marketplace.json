@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "hosca-plugins",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "owner": { "name": "erhan", "email": "erhan@hosca.com" },
   "description": "A growing catalog of Hosca plugins for Claude Code.",
   "plugins": [
     {
       "name": "sql-audit-skill",
       "source": "./plugins/sql-audit-skill",
-      "description": "Audit a SQL Server database against Joe Celko's SQL Programming Style rules. Read-only catalog queries via sqlcmd, severity-tiered report.",
+      "description": "Audit a SQL Server database against Joe Celko's SQL Programming Style rules. Read-only catalog queries via sqlcmd, severity-tiered report. Windows-only.",
       "author": { "name": "erhan", "email": "erhan@hosca.com" },
       "homepage": "https://github.com/ehosca/hosca-plugins",
       "repository": "https://github.com/ehosca/hosca-plugins",
